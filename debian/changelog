@@ -27,6 +27,8 @@ munin (2.0.37-3) UNRELEASED; urgency=low
   * mysql plugins: switch the "mysqluser" from "debian-sys-maint" to "root"
     in the plugin configuration; see NEWS entry for details
     (Closes: #862238, #864845)
+  * adjust javac compile version to currently packaged Java versions
+    (Closes: #873993)
 
  -- Lars Kruse <devel@sumpfralle.de>  Thu, 21 Jun 2018 22:05:46 +0200
 
