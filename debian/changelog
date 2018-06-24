@@ -24,6 +24,9 @@ munin (2.0.37-3) UNRELEASED; urgency=low
     Thanks Stefano Rivera! (Closes: #885454)
   * munin-node: use the same group for chown of /var/log/munin as the
     munin package (group "adm" instead of "www-data")
+  * mysql plugins: switch the "mysqluser" from "debian-sys-maint" to "root"
+    in the plugin configuration; see NEWS entry for details
+    (Closes: #862238, #864845)
 
  -- Lars Kruse <devel@sumpfralle.de>  Thu, 21 Jun 2018 22:05:46 +0200
 
