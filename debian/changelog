@@ -1,5 +1,13 @@
-munin (2.0.37-3) UNRELEASED; urgency=low
+munin (2.0.39-1) UNRELEASED; urgency=low
 
+  * New upstream version 2.0.39.
+  * New upstream version 2.0.38, fixing various issues, including bugs in:
+    - postfix_mailstats: incorrect delivered message count (Closes: #675318)
+    - quota_usage_: documentation deviates from behaviour (Closes: #730030)
+    - munin outputs malformed XHTML (Closes: #732149)
+    - iostat_ios: plugin should support configuration (Closes: #767018)
+    - df*: warnings for special filesystems on kFreeBSD (Closes: #767102)
+    - mysql_innodb: improve version detection (Closes: #901729)
   * fix trivial spelling mistakes below debian/ (thanks "codespell")
   * explicitly fail on erroneous OSTYPE detection
     (this may help with analyzing #839233)
@@ -59,7 +67,7 @@ munin (2.0.37-3) UNRELEASED; urgency=low
     Previously the affected tests were simply skipped without the
     requirement being installed.
 
- -- Lars Kruse <devel@sumpfralle.de>  Thu, 21 Jun 2018 22:05:46 +0200
+ -- Lars Kruse <devel@sumpfralle.de>  Sun, 05 Aug 2018 03:03:58 +0200
 
 munin (2.0.37-2) unstable; urgency=medium
 
