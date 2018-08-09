@@ -1,3 +1,4 @@
+# -*- cperl -*-
 #
 # Copyright (C) 2009 Magnus Hagander, Redpill Linpro AB
 #
@@ -20,6 +21,7 @@
 # perlpod.
 
 
+# $Id$
 
 =head1 NAME
 
@@ -47,9 +49,6 @@ variables that libpq does. The most common ones used are:
 The plugins will by default connect to the 'template1' database, except for
 wildcard per-database plugins. This can be overridden using the PGDATABASE
 variable, but this is usually a bad idea.
-
-If you are using plugin for several postgres instances, you can customize
-graph title with the environment variable PGLABEL.
 
 =head2 Example
 
@@ -147,8 +146,7 @@ use Munin::Plugin;
                 if the plugin should be run on this machine. Must return a single
                 row, two columns columns. The first one is a boolean field
                 representing yes or no, the second one a reason for "no".
- graphdraw      The draw parameter for the graph. The default is LINE1. This
-                can be an array, see "Specifying graphdraw" section for details.
+ graphdraw      The draw parameter for the graph. The default is LINE1.
  graphtype      The type parameter for the graph. The default is GAUGE.
  graphperiod    The period for the graph. Copied directly to the config output.
  graphmin       The min parameter for the graph. The default is no minimum.
@@ -158,9 +156,9 @@ use Munin::Plugin;
  base           Used for graph_args --base. Default is 1000, set to 1024 when
                 returning sizes in Kb for example.
  wildcardfilter The SQL to substitute for when a wildcard plugin is run against
-                a specific entity, for example a database. All occurrences of
+                a specific entity, for example a database. All occurrances of
                 the string %%FILTER%% will be replaced with this string, and
-                for each occurrence a parameter with the value of the filtering
+                for each occurance a parameter with the value of the filtering
                 condition will be added to the DBI statement.
  paramdatabase  Makes the plugin connect to the database in the first parameter
                 (wildcard plugins only) instead of 'template1'.
@@ -177,7 +175,6 @@ use Munin::Plugin;
                 and can post-process the result and return a new resultset.
  postsuggest    A function that's called with the result of the suggest query,
                 and can post-process the result and return a new resultset.
- multigraph     The multigraph parameter if plugin supports multigraphs.
 
 =head3 Specifying queries
 
@@ -195,21 +192,6 @@ This array is parsed from top to bottom, so the entries must be in order of
 version number. The *last* value found where the version specified is higher
 than or equal to the version of the server will be used (yes, it counts
 backwards).
-
-=head3 Specifying graphdraw
-
-The graphdraw parameter can be of two forms. If you specify it as a string, e.g.
- graphdraw => LINE1
-its value will be used for all counters returned by the query. If you specify
-an array of graph types in the form below (assuming you have three counters):
- graphdraw => [ AREA, LINE1, LINE1 ]
-Then graph type for each of the counters will be set according to the elements
-of the array. Graph types need to be specified in the order or being returned
-by 'configquery'.
-
-The size of the array should match the number of defined counters. If 'stack'
-parameter is in use, then only first element of array will be used for the first
-counter and the remaining ones will be overridden by 'STACK'.
 
 =cut
 
@@ -251,7 +233,6 @@ sub new {
         postconfig     => $args{postconfig},
         postautoconf   => $args{postautoconf},
         postsuggest    => $args{postsuggest},
-        multigraph     => $args{multigraph},
     };
 
     foreach my $k (keys %defaults) {
@@ -267,14 +248,12 @@ sub Config {
 
     $self->ensure_version();
 
-    print "multigraph $self->{multigraph}\n" if ($self->{multigraph});
-    my $pglabel = defined($ENV{'PGLABEL'}) ? ' '.$ENV{'PGLABEL'} : '';
     my $w = $self->wildcard_parameter();
     if ($w) {
-      print "graph_title $self->{title}${pglabel} ($w)\n";
+      print "graph_title $self->{title} ($w)\n";
     }
     else {
-      print "graph_title $self->{title}${pglabel}\n";
+      print "graph_title $self->{title}\n";
     }
     print "graph_vlabel $self->{vlabel}\n";
     print "graph_category $self->{category}\n";
@@ -294,21 +273,7 @@ sub Config {
         $r = $self->{postconfig}->($r);
     }
 
-    if (ref($self->{graphdraw}) eq 'ARRAY') {
-        if (scalar @$r != scalar @{ $self->{graphdraw} }) {
-            die "graphdraw array does not match the number of data sources";
-        }
-    }
-    else {
-        my $graphdraw = $self->{graphdraw};
-        $self->{graphdraw} = [];
-        for (0 .. scalar(@$r) - 1) {
-            push (@{$self->{graphdraw}}, $graphdraw);
-        }
-    }
-
-    for (0 .. scalar(@$r) - 1) {
-        my $row = @$r[$_];
+    foreach my $row (@$r) {
         my $l = Munin::Plugin::clean_fieldname($row->[0]);
         print "$l.label $row->[1]\n";
         print "$l.info $row->[2]\n" if (defined $row->[2]);
@@ -317,7 +282,7 @@ sub Config {
             print "$l.draw STACK\n";
         }
         else {
-            print "$l.draw $self->{graphdraw}[$_]\n";
+            print "$l.draw $self->{graphdraw}\n";
         }
         print "$l.min $self->{graphmin}\n" if (defined $self->{graphmin});
         print "$l.max $self->{graphmax}\n" if (defined $self->{graphmax});
@@ -385,7 +350,6 @@ sub GetData {
     my ($self) = @_;
     $self->ensure_version();
     if ($self->{basequery}) {
-        print "multigraph $self->{multigraph}\n" if ($self->{multigraph});
         my ($q, @p)
             = $self->replace_wildcard_parameters(
             $self->get_versioned_query($self->{basequery}));
@@ -461,7 +425,7 @@ sub _connect() {
         # variables.
         my $dbname = "template1";
         $dbname = $self->{defaultdb}           if ($self->{defaultdb});
-        $dbname = $self->wildcard_parameter(0) if ($self->{paramdatabase} && !defined($nowildcard) && $self->wildcard_parameter(0));
+        $dbname = $self->wildcard_parameter(0) if ($self->{paramdatabase} && !defined($nowildcard));
         $dbname = $ENV{"PGDATABASE"}           if ($ENV{"PGDATABASE"});
         $self->{dbh} = DBI->connect("DBI:Pg:dbname=$dbname", '', '', {pg_server_prepare => 0});
         unless ($self->{dbh}) {
@@ -511,10 +475,13 @@ sub get_version {
 
     return if (defined $self->{detected_version});
 
-    my $r = $self->runquery("SHOW server_version");
+    my $r = $self->runquery("SELECT version()");
     my $v = $r->[0]->[0];
-    die "Unable to detect PostgreSQL version\n"
-        unless ($v =~ /^(\d+)\.(\d+).*\b/);
+    if ($v !~ /^PostgreSQL (\d+)\.(\d+) on /)
+    {
+    	die "Unable to detect PostgreSQL version\n"
+    	    unless ($v =~ /^PostgreSQL (\d+)\.(\d+)(\.\d+|devel|beta\d+|rc\d+)\b/);
+    }
     $self->{detected_version} = "$1.$2";
 }
 
